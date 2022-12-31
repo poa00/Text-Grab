@@ -9,6 +9,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media.Imaging;
+using Text_Grab.Controls;
+using Text_Grab.Models;
 using Text_Grab.Properties;
 using Windows.Globalization;
 using Windows.Graphics.Imaging;
@@ -79,7 +81,8 @@ public static class OcrExtensions
         Rectangle correctedRegion = new(thisCorrectedLeft, thisCorrectedTop, selectedRegion.Width, selectedRegion.Height);
         Bitmap bmp = ImageMethods.GetRegionOfScreenAsBitmap(correctedRegion);
 
-        return await GetTextFromEntireBitmap(bmp, language);
+        // return await GetTextFromEntireBitmap(bmp, language);
+        return await GetTextWithSpacesFromBitmap(bmp, language);
     }
 
     public static async Task<(OcrResult, double)> GetOcrResultFromRegion(Rectangle region, Language language)
@@ -150,6 +153,58 @@ public static class OcrExtensions
         }
 
         return text.ToString();
+    }
+
+    public async static Task<string> GetTextWithSpacesFromBitmap(Bitmap bitmap, Language language)
+    {
+        double scale = await GetIdealScaleFactorForOCR(bitmap, language);
+        Bitmap scaledBitmap = ImageMethods.ScaleBitmapUniform(bitmap, scale);
+
+        StringBuilder text = new();
+
+        OcrResult ocrResult = await OcrExtensions.GetOcrResultFromBitmap(scaledBitmap, language);
+        bool isSpaceJoiningOCRLang = LanguageUtilities.IsLanguageSpaceJoining(language);
+
+        ResultTable resultTable = new();
+        List<WordBorder> wordBorders = ResultTable.ParseOcrResultIntoWordBorders(ocrResult, new DpiScale(1, 1));
+        Rectangle bitmapBounds = new(0, 0, bitmap.Width, bitmap.Height);
+        resultTable.AnalyzeAsTable(wordBorders, bitmapBounds);
+
+        return GetTextWithSpacesFromTabledWordBorders(wordBorders);
+    }
+
+    public static string GetTextWithSpacesFromTabledWordBorders(List<WordBorder> wordBorders)
+    {
+        StringBuilder stringBuilder = new();
+        List<IGrouping<int, WordBorder>> wordsGroupedByRow = wordBorders.GroupBy(x => x.ResultRowID).ToList();
+
+        double leftMarginStart = wordBorders.Min(x => x.Left);
+
+        List<double> pixelCharWidths = new();
+        foreach (WordBorder wbr in wordBorders)
+            pixelCharWidths.Add(wbr.AverageCharPixelWidth());
+        double averageCharWidth = pixelCharWidths.Average();
+
+        foreach (IGrouping<int, WordBorder> Group in wordsGroupedByRow)
+        {
+            double distToLeft = leftMarginStart;
+
+            foreach (WordBorder wb in Group)
+            {
+                int numberOfSpaces = (int)((wb.Left - distToLeft) / averageCharWidth);
+                if (numberOfSpaces < 1)
+                    numberOfSpaces = 0;
+
+                if (numberOfSpaces < 4)
+                    stringBuilder.Append(new string(' ', numberOfSpaces)).Append(wb.Word);
+                else
+                    stringBuilder.Append(new string('\t', numberOfSpaces / 4)).Append(wb.Word);
+                distToLeft = wb.Left + wb.Width;
+            }
+            stringBuilder.Append(Environment.NewLine);
+        }
+
+        return stringBuilder.ToString();
     }
 
     public static async Task<string> OcrAbsoluteFilePath(string absolutePath)
