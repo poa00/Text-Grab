@@ -132,6 +132,11 @@ public partial class WordBorder : UserControl, INotifyPropertyChanged
         return rectToChek.IntersectsWith(wbRect);
     }
 
+    public double AverageCharPixelWidth()
+    {
+        return Width / Word.Length;
+    }
+
     private void EditWordTextBox_ContextMenuOpening(object sender, ContextMenuEventArgs e)
     {
         ContextMenu textBoxContextMenu = EditWordTextBox.ContextMenu;

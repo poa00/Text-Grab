@@ -503,7 +503,8 @@ public partial class GrabFrame : Window
             RectanglesCanvas.RenderTransform = transform;
         }
 
-        if (TableToggleButton.IsChecked is true && ocrResultOfWindow is not null)
+        // if (TableToggleButton.IsChecked is true && ocrResultOfWindow is not null)
+        if (ocrResultOfWindow is not null)
         {
             try
             {
@@ -681,20 +682,51 @@ public partial class GrabFrame : Window
 
     private void UpdateFrameText()
     {
+        if (wordBorders is null || wordBorders.Count == 0)
+            return;
+
         string[] selectedWbs = wordBorders.Where(w => w.IsSelected).Select(t => t.Word).ToArray();
 
         StringBuilder stringBuilder = new();
 
-        if (TableToggleButton.IsChecked is true)
+        //if (TableToggleButton.IsChecked is true)
+        //{
+        //    ResultTable.GetTextFromTabledWordBorders(stringBuilder, wordBorders.ToList(), isSpaceJoining);
+        //}
+        //else
+        //{
+        //    if (selectedWbs.Length > 0)
+        //        stringBuilder.AppendJoin(Environment.NewLine, selectedWbs);
+        //    else
+        //        stringBuilder.AppendJoin(Environment.NewLine, wordBorders.Select(w => w.Word).ToArray());
+        //}
+
+        List<IGrouping<int, WordBorder>> wordsGroupedByRow = wordBorders.GroupBy(x => x.ResultRowID).ToList();
+
+        double leftMarginStart = wordBorders.Min(x => x.Left);
+
+        List<double> pixelCharWidths = new();
+        foreach (WordBorder wbr in wordBorders)
+            pixelCharWidths.Add(wbr.AverageCharPixelWidth());
+        double averageCharWidth = pixelCharWidths.Average();
+
+        foreach (IGrouping<int, WordBorder> Group in wordsGroupedByRow)
         {
-            ResultTable.GetTextFromTabledWordBorders(stringBuilder, wordBorders.ToList(), isSpaceJoining);
-        }
-        else
-        {
-            if (selectedWbs.Length > 0)
-                stringBuilder.AppendJoin(Environment.NewLine, selectedWbs);
-            else
-                stringBuilder.AppendJoin(Environment.NewLine, wordBorders.Select(w => w.Word).ToArray());
+            double distToLeft = leftMarginStart;
+
+            foreach (WordBorder wb in Group)
+            {
+                int numberOfSpaces = (int)((wb.Left - distToLeft) / averageCharWidth);
+                if (numberOfSpaces < 1)
+                    numberOfSpaces = 0;
+
+                if (numberOfSpaces < 4)
+                    stringBuilder.Append(new string(' ', numberOfSpaces)).Append(wb.Word);
+                else
+                    stringBuilder.Append(new string('\t', numberOfSpaces / 4)).Append(wb.Word);
+                distToLeft = wb.Left + wb.Width;
+            }
+            stringBuilder.Append(Environment.NewLine);
         }
 
         FrameText = stringBuilder.ToString();
