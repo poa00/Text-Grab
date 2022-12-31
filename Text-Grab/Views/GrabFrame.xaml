@@ -289,6 +289,18 @@
                         </ToggleButton>
 
                         <ToggleButton
+                            x:Name="PreserveSpacesToggleButton"
+                            Margin="6,0,0,0"
+                            Padding="7,4"
+                            Click="PreserveSpacesToggleButton_Click"
+                            Style="{StaticResource ToggleSymbolButton}"
+                            ToolTip="Try to Preserve Spaces">
+                            <TextBlock FontFamily="Segoe MDL2 Assets">
+                                
+                            </TextBlock>
+                        </ToggleButton>
+
+                        <ToggleButton
                             x:Name="TableToggleButton"
                             Margin="6,0,0,0"
                             Padding="7,4"

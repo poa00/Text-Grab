@@ -79,6 +79,8 @@ public partial class GrabFrame : Window
             destinationTextBox = value;
             if (destinationTextBox is not null)
                 EditTextToggleButton.IsChecked = true;
+            else
+                EditTextToggleButton.IsChecked = false;
         }
     }
 
@@ -689,44 +691,20 @@ public partial class GrabFrame : Window
 
         StringBuilder stringBuilder = new();
 
-        //if (TableToggleButton.IsChecked is true)
-        //{
-        //    ResultTable.GetTextFromTabledWordBorders(stringBuilder, wordBorders.ToList(), isSpaceJoining);
-        //}
-        //else
-        //{
-        //    if (selectedWbs.Length > 0)
-        //        stringBuilder.AppendJoin(Environment.NewLine, selectedWbs);
-        //    else
-        //        stringBuilder.AppendJoin(Environment.NewLine, wordBorders.Select(w => w.Word).ToArray());
-        //}
-
-        List<IGrouping<int, WordBorder>> wordsGroupedByRow = wordBorders.GroupBy(x => x.ResultRowID).ToList();
-
-        double leftMarginStart = wordBorders.Min(x => x.Left);
-
-        List<double> pixelCharWidths = new();
-        foreach (WordBorder wbr in wordBorders)
-            pixelCharWidths.Add(wbr.AverageCharPixelWidth());
-        double averageCharWidth = pixelCharWidths.Average();
-
-        foreach (IGrouping<int, WordBorder> Group in wordsGroupedByRow)
+        if (TableToggleButton.IsChecked is true)
         {
-            double distToLeft = leftMarginStart;
-
-            foreach (WordBorder wb in Group)
-            {
-                int numberOfSpaces = (int)((wb.Left - distToLeft) / averageCharWidth);
-                if (numberOfSpaces < 1)
-                    numberOfSpaces = 0;
-
-                if (numberOfSpaces < 4)
-                    stringBuilder.Append(new string(' ', numberOfSpaces)).Append(wb.Word);
-                else
-                    stringBuilder.Append(new string('\t', numberOfSpaces / 4)).Append(wb.Word);
-                distToLeft = wb.Left + wb.Width;
-            }
-            stringBuilder.Append(Environment.NewLine);
+            ResultTable.GetTextFromTabledWordBorders(stringBuilder, wordBorders.ToList(), isSpaceJoining);
+        }
+        else if (PreserveSpacesToggleButton.IsChecked is true)
+        {
+            stringBuilder.Append(OcrExtensions.GetTextWithSpacesFromTabledWordBorders(wordBorders.ToList()));
+        }
+        else
+        {
+            if (selectedWbs.Length > 0)
+                stringBuilder.AppendJoin(Environment.NewLine, selectedWbs);
+            else
+                stringBuilder.AppendJoin(Environment.NewLine, wordBorders.Select(w => w.Word).ToArray());
         }
 
         FrameText = stringBuilder.ToString();
@@ -929,6 +907,14 @@ public partial class GrabFrame : Window
 
         if (finalCheck)
             UpdateFrameText();
+    }
+
+    private void PreserveSpacesToggleButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ToggleButton preserveSpacesToggleButton)
+            return;
+
+        UpdateFrameText();
     }
 
     private void TableToggleButton_Click(object sender, RoutedEventArgs e)
