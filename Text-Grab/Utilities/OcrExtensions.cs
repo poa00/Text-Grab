@@ -189,7 +189,7 @@ public static class OcrExtensions
         {
             double distToLeft = leftMarginStart;
 
-            foreach (WordBorder wb in Group)
+            foreach (WordBorder wb in Group.OrderBy(x => x.Left))
             {
                 int numberOfSpaces = (int)((wb.Left - distToLeft) / averageCharWidth);
                 if (numberOfSpaces < 1)
