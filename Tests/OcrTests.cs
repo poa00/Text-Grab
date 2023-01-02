@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Text;
 using System.Windows;
+using Text_Grab;
 using Text_Grab.Controls;
 using Text_Grab.Models;
 using Text_Grab.Utilities;
@@ -141,6 +142,40 @@ December	12	Winter";
 
         // Then
         Assert.Equal(expectedResult, stringBuilder.ToString());
+    }
+
+    [WpfFact]
+    public async Task ReadTableOfContentsWithSpaces()
+    {
+        string expectedResult = @"								Contents
+Introduction to the Tenth Anniversary Edition				page xvii
+Afterword to the Tenth Anniversary Edition					xix
+Preface										xxi
+Acknowledgements									xxvii
+Nomenclature and notation								xxix
+Part I Fundamental concepts								1
+1 Introduction and overview								1
+   1.1 Global perspectives
+	I.I.I Ilistory of quantum computation and quantum
+		information								2
+	l. 1.2 Future directions							12
+   1.2 Quantum bits									13
+	1.2. I Nlultiple qubits							16
+   1.3 Quantum computation								17
+	1.3.1 Single qubit gates							17
+	1.3.2 Multiple qubit gates							20
+	1.3.3 Measurements in bases other than the computational basis	22
+	1..3.4 Quantum circuits							22
+	1.3.5 Qubit copying circuit?						24";
+
+        string testImagePath = @".\Images\toc.png";
+        Language englishLanguage = new("en-US");
+        Bitmap testBitmap = new(getPathToImages(testImagePath));
+        double idealScaleFactor = await OcrExtensions.GetIdealScaleFactorForOCR(testBitmap, englishLanguage);
+        Bitmap scaledBitmap = ImageMethods.ScaleBitmapUniform(testBitmap, idealScaleFactor);
+        string actualString = await OcrExtensions.GetTextWithSpacesFromBitmap(scaledBitmap, englishLanguage);
+
+        Assert.Equal(expectedResult, actualString);
     }
 
     private string getPathToImages(string imageRelativePath)
