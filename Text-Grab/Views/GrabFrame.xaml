@@ -366,6 +366,9 @@
                     </Grid>
                 </Viewbox>
             </Border>
+
+
+
             <Border Grid.Row="2" Background="{StaticResource DarkBackground}">
                 <Grid
                     Height="30"
