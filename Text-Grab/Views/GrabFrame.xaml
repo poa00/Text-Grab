@@ -322,6 +322,10 @@
                             VerticalAlignment="Center"
                             Opacity="0"
                             Stretch="Uniform" />
+                        <ui:ProgressRing
+                            x:Name="ImageProgressRing"
+                            IsIndeterminate="True"
+                            Visibility="Collapsed" />
                         <Canvas
                             x:Name="RectanglesCanvas"
                             Margin="-4,-2,0,0"
@@ -512,6 +516,19 @@
                             ToolTip="OCR Frame (Ctrl + R)"
                             Visibility="Collapsed" />
 
+                        <ToggleButton
+                            x:Name="CameraBTN"
+                            Width="30"
+                            Height="30"
+                            Margin="6,0,0,0"
+                            Padding="0"
+                            Click="CameraBTN_Click"
+                            Style="{StaticResource ToggleSymbolButton}"
+                            ToolTip="Capture camera content">
+                            <TextBlock FontFamily="Segoe MDL2 Assets">
+                                
+                            </TextBlock>
+                        </ToggleButton>
                         <ToggleButton
                             x:Name="FreezeToggleButton"
                             Width="30"

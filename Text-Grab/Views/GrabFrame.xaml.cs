@@ -1,8 +1,10 @@
 ﻿using Fasetto.Word;
+using OpenCvSharp.WpfExtensions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.IO;
@@ -10,6 +12,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -1109,6 +1112,7 @@ public partial class GrabFrame : Window
 
     private void GrabFrameWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
+        CloseAndDisposeCamera();
         FrameText = "";
         wordBorders.Clear();
         UpdateFrameText();
@@ -1649,6 +1653,7 @@ public partial class GrabFrame : Window
     private async void RefreshBTN_Click(object? sender = null, RoutedEventArgs? e = null)
     {
         reDrawTimer.Stop();
+        CloseAndDisposeCamera();
         ResetGrabFrame();
 
         await Task.Delay(200);
@@ -2107,4 +2112,69 @@ public partial class GrabFrame : Window
     }
 
     #endregion Methods
+
+    private OpenCvSharp.VideoCapture? capture;
+
+    private BackgroundWorker? bkgWorker;
+
+    private void CameraBTN_Click(object sender, RoutedEventArgs e)
+    {
+        ImageProgressRing.Visibility = Visibility.Visible;
+        if (capture is not null)
+        {
+            CloseAndDisposeCamera();
+            ImageProgressRing.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        ResetGrabFrame();
+        GrabFrameImage.Opacity = 1;
+
+        CameraBTN.IsChecked = true;
+        capture = new();
+
+        bkgWorker = new BackgroundWorker { WorkerSupportsCancellation = true };
+        bkgWorker.DoWork += Worker_DoWork;
+
+        capture.AutoFocus = true;
+
+        capture.Open(0, OpenCvSharp.VideoCaptureAPIs.ANY);
+        ImageProgressRing.Visibility = Visibility.Collapsed;
+
+        if (!capture.IsOpened())
+        {
+            Close();
+            return;
+        }
+
+        bkgWorker.RunWorkerAsync();
+    }
+
+    private void CloseAndDisposeCamera()
+    {
+        bkgWorker?.CancelAsync();
+        CameraBTN.IsChecked = false;
+        capture?.Dispose();
+        capture = null;
+    }
+
+    private void Worker_DoWork(object? sender, DoWorkEventArgs? e)
+    {
+        if (sender is not BackgroundWorker worker
+            || capture is null)
+            return;
+
+        while (!worker.CancellationPending)
+        {
+            using OpenCvSharp.Mat frameMat = capture.RetrieveMat();
+
+            // Must create and use WriteableBitmap in the same thread(UI Thread).
+            Dispatcher.Invoke(() =>
+            {
+                GrabFrameImage.Source = frameMat.ToWriteableBitmap();
+            });
+
+            Thread.Sleep(20);
+        }
+    }
 }
