@@ -983,6 +983,9 @@ public partial class GrabFrame : Window
 
     private void FreezeGrabFrame()
     {
+        if (capture is not null)
+            CloseAndDisposeCamera();
+
         GrabFrameImage.Opacity = 1;
         if (frameContentImageSource is not null)
             GrabFrameImage.Source = frameContentImageSource;
@@ -2117,29 +2120,38 @@ public partial class GrabFrame : Window
 
     private BackgroundWorker? bkgWorker;
 
-    private void CameraBTN_Click(object sender, RoutedEventArgs e)
+    private async void CameraBTN_Click(object sender, RoutedEventArgs e)
     {
         ImageProgressRing.Visibility = Visibility.Visible;
         if (capture is not null)
         {
             CloseAndDisposeCamera();
+            FreezeGrabFrame();
             ImageProgressRing.Visibility = Visibility.Collapsed;
+            reDrawTimer.Start();
             return;
         }
 
+        await OpenCamera();
+        ImageProgressRing.Visibility = Visibility.Collapsed;
+    }
+
+    private async Task OpenCamera()
+    {
         ResetGrabFrame();
+        this.Background = new SolidColorBrush(Colors.DimGray);
+
         GrabFrameImage.Opacity = 1;
 
         CameraBTN.IsChecked = true;
         capture = new();
 
         bkgWorker = new BackgroundWorker { WorkerSupportsCancellation = true };
-        bkgWorker.DoWork += Worker_DoWork;
+        bkgWorker.DoWork += CameraWorker_DoWork;
 
         capture.AutoFocus = true;
 
         capture.Open(0, OpenCvSharp.VideoCaptureAPIs.ANY);
-        ImageProgressRing.Visibility = Visibility.Collapsed;
 
         if (!capture.IsOpened())
         {
@@ -2148,6 +2160,7 @@ public partial class GrabFrame : Window
         }
 
         bkgWorker.RunWorkerAsync();
+        await Task.CompletedTask;
     }
 
     private void CloseAndDisposeCamera()
@@ -2158,7 +2171,7 @@ public partial class GrabFrame : Window
         capture = null;
     }
 
-    private void Worker_DoWork(object? sender, DoWorkEventArgs? e)
+    private void CameraWorker_DoWork(object? sender, DoWorkEventArgs? e)
     {
         if (sender is not BackgroundWorker worker
             || capture is null)
