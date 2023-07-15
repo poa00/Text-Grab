@@ -322,6 +322,7 @@
                             VerticalAlignment="Center"
                             Opacity="0"
                             Stretch="Uniform" />
+                        <controls:CaptureElement x:Name="MyCaptureElement" />
                         <Canvas
                             x:Name="RectanglesCanvas"
                             Margin="-4,-2,0,0"

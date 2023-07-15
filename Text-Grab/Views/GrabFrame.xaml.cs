@@ -25,6 +25,7 @@ using Text_Grab.Properties;
 using Text_Grab.UndoRedoOperations;
 using Text_Grab.Utilities;
 using Windows.Globalization;
+using Windows.Media.Capture;
 using Windows.Media.Ocr;
 using Windows.System;
 using ZXing;
@@ -289,6 +290,9 @@ public partial class GrabFrame : Window
         _ = CommandBindings.Add(new CommandBinding(pasteCommand, PasteExecuted));
 
         CheckBottomRowButtonsVis();
+
+        MediaCapture mediaCaptureMgr = new();
+        MyCaptureElement.SetCaptureAsync(mediaCaptureMgr);
     }
 
     public void GrabFrame_Unloaded(object sender, RoutedEventArgs e)
