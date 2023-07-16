@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:Text_Grab.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:toolkitControls="using:Microsoft.Toolkit.Uwp.UI.Controls"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     x:Name="GrabFrameWindow"
     Title="Grab Frame"
@@ -322,6 +323,7 @@
                             VerticalAlignment="Center"
                             Opacity="0"
                             Stretch="Uniform" />
+                        <toolkitControls:CameraPreview x:Name="CameraPreviewControl" />
                         <Canvas
                             x:Name="RectanglesCanvas"
                             Margin="-4,-2,0,0"
